@@ -14,9 +14,6 @@ eia_api <- keys[grep('eia',keys)+1]
 
 
 ### fuel prices
-eia_api <- 'KDrDuEMaa3RqnNh0xI41Ft1XgdIqFwOpEoIx97PX'
-url <- 'https://api.eia.gov/v2/petroleum/pri/gnd/data/?api_key=KDrDuEMaa3RqnNh0xI41Ft1XgdIqFwOpEoIx97PX&frequency=monthly&data[0]=value&facets[series][]=EMD_EPD2DXL0_PTE_R30_DPG&facets[series][]=EMD_EPD2D_PTE_R30_DPG&facets[series][]=EMM_EPM0_PTE_R30_DPG&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=5000'
-
 url <- paste0('https://api.eia.gov/v2/petroleum/pri/gnd/data/?api_key=',
               eia_api,
               '&frequency=monthly&data[0]=value&facets[series][]=EMD_EPD2DXL0_PTE_R30_DPG&facets[series][]=EMD_EPD2D_PTE_R30_DPG&facets[series][]=EMM_EPM0_PTE_R30_DPG&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=5000')
