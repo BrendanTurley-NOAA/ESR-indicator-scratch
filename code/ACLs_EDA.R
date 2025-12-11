@@ -1,0 +1,55 @@
+mh <- MH_DL_2025Sep10
+
+kmk_acls <- subset(MH_DL_2025Sep10, SPP_NAME=='MACKEREL, KING' & MANAGEMENT_TYPE_USE == "ACL")
+
+sa_com_acl <- subset(kmk_acls, SECTOR==sector & REGION==region)
+
+with(sa_com_acl,
+     plot(START_YEAR, VALUE))
+plot()
+
+#### Define species, region, and sector of interest ####
+species = c('SNAPPER, CUBERA', 'AMBERJACK, GREATER', 'AMBERJACK, LESSER', 'JACK, ALMACO', 'SNAPPER, SILK', 'SNAPPER, QUEEN', 'SNAPPER, BLACKFIN', 'WENCHMAN',
+            'DRUM, RED', 'COBIA', 'GROUPER, GAG', 'SNAPPER, GRAY', 'MACKEREL, KING', 'GROUPER, YELLOWEDGE', 'SNAPPER, LANE', 'GROUPER, RED', 'SNAPPER, RED', 
+            'SCAMP', 'MACKEREL, SPANISH','HOGFISH', 'SNAPPER, MUTTON', 'SNAPPER, YELLOWTAIL', 'SNAPPER, VERMILION', 'TRIGGERFISH, GRAY', 'TRIGGERFISH, QUEEN')
+species = 'MACKEREL, KING'
+region = 'SOUTH ATLANTIC'
+sector = 'RECREATIONAL'
+
+#### ACLs ####
+# Filter to species, region, and sector of interest
+# Remove non-detailed regulations, those that were never implemented, and those that removed a regulation
+# Adjust variable titles and format
+ACLs <- mh %>%
+  filter(COMMON_NAME_USE %in% species,
+         REGION %in% region,
+         SECTOR == sector,
+         DETAILED == "YES",
+         NEVER_IMPLEMENTED %in% c(0, NA),
+         REG_REMOVED == 0,
+         MANAGEMENT_TYPE_USE == "ACL") %>%
+  arrange(CLUSTER, START_DATE2) %>%
+  mutate(Species = case_when(str_detect(COMMON_NAME_USE, ",") ~ {parts <- str_split_fixed(COMMON_NAME_USE, ",", 2)
+  str_to_title(str_trim(parts[,2])) %>% paste(str_to_title(str_trim(parts[,1])))},
+  TRUE ~ str_to_title(COMMON_NAME_USE)),
+  Fishery = str_to_title(paste0(SECTOR_USE, " ", SUBSECTOR_USE)),
+  `Region Affected` = str_to_title(paste0(REGION, " ", ZONE_USE)),
+  `First Year in Effect` = year(START_DATE2),
+  `Fishing Year Effective Date` = format(START_DATE2, "%m/%d/%Y"),
+  `FR Notice Effetive Date` = format(EFFECTIVE_DATE, "%m/%d/%Y"),
+  `FR Notice Ineffective Date` = format(INEFFECTIVE_DATE, "%m/%d/%Y"),
+  ACL = case_when(MANAGEMENT_TYPE_USE == "ACL" ~ paste0(VALUE, " ", tolower(VALUE_UNITS),ifelse(!is.na(VALUE_TYPE), paste0(" (", tolower(VALUE_TYPE), ")"), "")),
+                  TRUE ~ NA_character_),
+  `FR Reference` = case_when(MANAGEMENT_TYPE_USE == "ACL" ~ FR_CITATION,
+                             TRUE ~ NA_character_),
+  `FR URL` = case_when(MANAGEMENT_TYPE_USE == "ACL" ~ FR_URL,
+                       TRUE ~ NA_character_),
+  `Amendment Number or Rule Type` = case_when(!is.na(AMENDMENT_NUMBER) & !is.na(ACTION_TYPE) ~ str_to_title(paste0(ACTION, " ", ACTION_TYPE, " ", AMENDMENT_NUMBER)),
+                                              !is.na(AMENDMENT_NUMBER) &  is.na(ACTION_TYPE) ~ str_to_title(paste0(ACTION, " ", AMENDMENT_NUMBER)),
+                                              is.na(AMENDMENT_NUMBER) & !is.na(ACTION_TYPE) ~ str_to_title(paste0(ACTION, " ", ACTION_TYPE)),
+                                              is.na(AMENDMENT_NUMBER) &  is.na(ACTION_TYPE) ~ str_to_title(ACTION)),
+  `Cluster` = CLUSTER) %>%
+  select(CLUSTER, Species, Fishery, `Region Affected`,
+         `First Year in Effect`, `Fishing Year Effective Date`, `FR Notice Effetive Date`, `FR Notice Ineffective Date`, `ACL`,
+         `FR Reference`, `FR URL`, `Amendment Number or Rule Type`) %>%
+  arrange(Species, CLUSTER, `First Year in Effect`)
