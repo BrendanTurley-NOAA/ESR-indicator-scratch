@@ -2,11 +2,17 @@
 # Code to filter to all Catch Limit regulations for a species of interest
 
 ##### Load packages ####
-librarian::shelf(here, tidyverse, gt, flextable, officer, dplyr, gt, officer, lubridate, htmltools, rmarkdown, tidyr)
+# librarian::shelf(here, tidyverse, gt, flextable, officer, dplyr, gt, officer, lubridate, htmltools, rmarkdown, tidyr)
+
+library(dplyr)
+library(here)
+library(lubridate)
 
 #### Load data ####
 # Load the MH Data Log
-mh <- readRDS(here("ODM-MH-Data_log", "data", "results", "MH_DL_2025Sep10.RDS"))
+# mh <- readRDS(here("ODM-MH-Data_log", "data", "results", "MH_DL_2025Sep10.RDS"))
+mh <- readRDS('C:/Users/brendan.turley/Documents/R_projects/SEFSC-ODM-Management-History/ODM-MH-Data_log/data/results/MH_DL_2025Sep10.RDS')
+
 
 #### Define species, region, and sector of interest ####
 species = c('SNAPPER, CUBERA', 'AMBERJACK, GREATER', 'AMBERJACK, LESSER', 'JACK, ALMACO', 'SNAPPER, SILK', 'SNAPPER, QUEEN', 'SNAPPER, BLACKFIN', 'WENCHMAN',
@@ -15,6 +21,7 @@ species = c('SNAPPER, CUBERA', 'AMBERJACK, GREATER', 'AMBERJACK, LESSER', 'JACK,
 region = 'GULF OF MEXICO'
 sector = 'RECREATIONAL'
 # sector = 'COMMERCIAL'
+management_type_use<- c('ACL','ACT', 'TAC', 'QUOTA')
 
 
 for(i in species){
@@ -30,6 +37,10 @@ for(i in species){
   print(nrow(tmp))
 }
 
+tmp <- mh |>
+  filter(COMMON_NAME_USE %in% species,
+         REGION %in% region,
+         SECTOR == 'RECREATIONAL')
 
 ### this works
 
@@ -39,34 +50,50 @@ acls <- mh %>%
          DETAILED == "YES",
          NEVER_IMPLEMENTED %in% c(0, NA),
          REG_REMOVED == 0,
-         MANAGEMENT_TYPE_USE == "ACL",
+         # MANAGEMENT_TYPE_USE == "ACL",
+         (MANAGEMENT_TYPE_USE %in% management_type_use),
          # MANAGEMENT_TYPE == "ACL",
-         SPP_TYPE == 'COMMON_NAME', ### removing this gets yellowedge groupers and scamp
+         # SPP_TYPE == 'COMMON_NAME', ### removing this gets yellowedge groupers and scamp
          VALUE_UNITS == 'POUNDS') %>%
-  arrange(CLUSTER, START_DATE2) |> type.convert() |>
-  filter(SUBSECTOR=='ALL' & SECTOR!='ALL')
+  arrange(CLUSTER, START_DATE2) |> type.convert(as.is = T) |>
+  filter(SUBSECTOR=='ALL') #|>
+# filter(SUBSECTOR=='ALL' & SECTOR=='ALL')
 
-yllw_scmp <- mh %>%
-  filter(COMMON_NAME_USE %in% c('GROUPER, YELLOWEDGE', 'SCAMP'),
-         REGION %in% region,
-         DETAILED == "YES",
-         NEVER_IMPLEMENTED %in% c(0, NA),
-         REG_REMOVED == 0,
-         MANAGEMENT_TYPE_USE == "ACL",
-         # MANAGEMENT_TYPE == "ACL",
-         VALUE_UNITS == 'POUNDS') |>
-  arrange(CLUSTER, START_DATE2) |> type.convert() #|>
-  # filter(SUBSECTOR=='ALL' & SECTOR!='ALL')
-
-acls <- rbind(yllw_scmp, acls)
+# yllw_scmp <- mh %>%
+#   filter(COMMON_NAME_USE %in% c('GROUPER, YELLOWEDGE', 'SCAMP'),
+#          REGION %in% region,
+#          DETAILED == "YES",
+#          NEVER_IMPLEMENTED %in% c(0, NA),
+#          REG_REMOVED == 0,
+#          MANAGEMENT_TYPE_USE == "ACL",
+#          # MANAGEMENT_TYPE == "ACL",
+#          VALUE_UNITS == 'POUNDS') |>
+#   arrange(CLUSTER, START_DATE2) |> type.convert() |>
+#   filter(SUBSECTOR=='ALL') #|>
+# # filter(SUBSECTOR=='ALL' & SECTOR=='ALL')
+# 
+# acls <- rbind(yllw_scmp, acls)
 
 acl_slice <- acls |>
   arrange(COMMON_NAME_USE, START_YEAR, SECTOR, EFFECTIVE_DATE) |>
   group_by(COMMON_NAME_USE, START_YEAR, SECTOR) |>
   slice_max(order_by = EFFECTIVE_DATE, n = 1, with_ties = F) |>
-  select(COMMON_NAME_USE, START_YEAR, SECTOR, VALUE)
+  select(COMMON_NAME_USE, SPP_TYPE, SPP_NAME, MANAGEMENT_TYPE_USE, START_YEAR, SECTOR, SUBSECTOR, VALUE)
 
 spp <- unique(acl_slice$COMMON_NAME_USE)
+
+mh |>
+  filter(COMMON_NAME_USE == 'SNAPPER, CUBERA',
+         REGION %in% region,
+         SECTOR == 'RECREATIONAL') |>
+  select(MANAGEMENT_TYPE_USE)
+
+
+
+setwd("~/R_projects/ESR-indicator-scratch/data/processed")
+write.csv(acl_slice, 'gulf_spp_acl_tac_quota.csv', row.names = F)
+
+
 
 acl_out <- list()
 for(i in spp){ 
@@ -110,6 +137,12 @@ for(i in spp){
          typ = 'o', col = 2, lwd = 2)
   legend('topright',c('COM','REC'), pch = 1, col = c(1,2), bty = 'n', pt.lwd = 2)
 }
+
+
+
+
+# Scratch -----------------------------------------------------------------
+
 
 
 
