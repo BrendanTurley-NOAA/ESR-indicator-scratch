@@ -78,7 +78,8 @@ acl_slice <- acls |>
   arrange(COMMON_NAME_USE, START_YEAR, SECTOR, EFFECTIVE_DATE) |>
   group_by(COMMON_NAME_USE, START_YEAR, SECTOR) |>
   slice_max(order_by = EFFECTIVE_DATE, n = 1, with_ties = F) |>
-  select(COMMON_NAME_USE, SPP_TYPE, SPP_NAME, MANAGEMENT_TYPE_USE, START_YEAR, SECTOR, SUBSECTOR, VALUE)
+  select(COMMON_NAME_USE, SPP_TYPE, SPP_NAME, MANAGEMENT_TYPE_USE, START_YEAR, 
+         SECTOR, SUBSECTOR, VALUE, VALUE_UNITS, VALUE_TYPE)
 
 spp <- unique(acl_slice$COMMON_NAME_USE)
 
@@ -91,7 +92,7 @@ mh |>
 
 
 setwd("~/R_projects/ESR-indicator-scratch/data/processed")
-write.csv(acl_slice, 'gulf_spp_acl_tac_quota.csv', row.names = F)
+write.csv(acl_slice, 'acl_tac_quota.csv', row.names = F)
 
 
 
