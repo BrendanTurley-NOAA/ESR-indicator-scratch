@@ -1,6 +1,14 @@
+###############################
+### these are done
+### platforms will be combined with the PEM struture database
+### Leases is done and ready to import into Gulf ESR 2025 as a metric
+###############################
 
+###############################
+######### BOEM platforms and leases #########
+###############################
 
-library(de)
+# library(de)
 library(purrr)
 library(lubridate)
 library(sf)
@@ -94,7 +102,7 @@ leases$LEASE_EXPIR_DATE <- mdy(leases$LEASE_EXPIR_DATE)
 
 # yrs <- sort(unique(year(leases$LEASE_EFF_DATE)))
 # full_yrs <- data.frame(year = seq(min(yrs),max(yrs)))
-yrs <- seq(min(year(leases$LEASE_EFF_DATE)),2025)
+yrs <- seq(min(year(leases$LEASE_EFF_DATE),na.rm=T),2025)
 
 lease_yr <- list()
 n <- 1
@@ -111,7 +119,7 @@ for(i in yrs){
 lease_yr <- list_rbind(lease_yr)
 # leases_year <- merge(full_yrs, lease_yr, by = 'year', all = T)
 
-plot(lease_yr$year, lease_yr$nlease, typ = 'l')
+plot(lease_yr$year, lease_yr$nlease, typ = 'l', lwd = 2)
 # plot(leases_year$year, leases_year$nlease, typ = 'l')
 
 setwd("~/R_projects/ESR-indicator-scratch/data/processed")

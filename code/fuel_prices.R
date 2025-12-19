@@ -1,3 +1,10 @@
+###############################
+### this is done and ready to import into Gulf ESR 2025 as a metric
+###############################
+
+###############################
+######### Fuel prices #########
+###############################
 
 library(dplyr)
 library(here)
@@ -64,8 +71,11 @@ d_merge <- merge(diesel, gdp_df, by = 'date')
 g_merge$value_2024 <- g_merge$fuel_value*(deflat_2024/g_merge$gdp_deflator_dollar)
 d_merge$value_2024 <- d_merge$fuel_value*(deflat_2024/d_merge$gdp_deflator_dollar)
 
-plot(d_merge$date,d_merge$fuel_value, typ = 'l', lwd = 3,panel.first = grid())
-points(g_merge$date,g_merge$fuel_value, typ = 'l', lwd = 3, col = 3)
+plot(d_merge$date,d_merge$value_2024, ylim = c(0, max(d_merge$value_2024,na.rm=T)), 
+     typ = 'l', lwd = 3,panel.first = grid())
+points(g_merge$date,g_merge$value_2024, typ = 'l', lwd = 3, col = 3)
+points(d_merge$date,d_merge$fuel_value, typ = 'l', lwd = 3, col = 1, lty = 3)
+points(g_merge$date,g_merge$fuel_value, typ = 'l', lwd = 3, col = 3,lty = 3)
 
 gas_out <- g_merge |> 
   select(date, fuel_value, value_2024) |>

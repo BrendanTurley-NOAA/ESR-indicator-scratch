@@ -1,4 +1,10 @@
-### GDP deflator
+###############################
+### this is done and ready to import into Gulf ESR 2025 as a metric
+###############################
+
+###############################
+######## GDP deflator #########
+###############################
 
 library(dplyr)
 library(here)
@@ -62,16 +68,12 @@ setwd('data/intermediate_files')
 write.csv(gdp_dfq, 'bea_gdp_deflator_table119.csv', row.names = F)
 write.csv(gdp_int, 'gdp_deflator_interpolated.csv', row.names = F)
 
-
-
-paste(as.integer(gdp_int$year_decimal),
-       round((gdp_int$year_decimal%%1)*12+1),
-       1, sep = '-') |> ymd()
+### end of code
 
 
 
 
-### alternative
+### alternative 
 bls_api <- keys[grep('bls',keys)+1]
 
 ### CPI; both seasonally adjusted and non
