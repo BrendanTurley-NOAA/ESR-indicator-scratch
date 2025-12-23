@@ -1,4 +1,5 @@
 keys.api
+/data
 
 # History files
 .Rhistory
