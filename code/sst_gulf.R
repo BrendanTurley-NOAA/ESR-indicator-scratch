@@ -60,7 +60,8 @@ for (yr in styear:enyear) {
   
   sst_eez <- aggregate(sst_sf$sst, 
                        by = list(sst_sf$time), 
-                       function(x) c(mean(x, na.rm = T), sd(x, na.rm = T)))
+                       function(x) c(mean(x, na.rm = T), sd(x, na.rm = T),
+                                     min(x, na.rm = T), max(x, na.rm = T)))
   
   if (yr == styear) { 
     dat_gulf <- sst_gulf
@@ -72,6 +73,9 @@ for (yr in styear:enyear) {
     }
 }
 
+### temp file save
+setwd("~/R_projects/ESR-indicator-scratch/data/intermediate_files")
+save(dat_eez, dat_gulf, file = 'sst_temp.RData')
 
 
 
