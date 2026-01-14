@@ -2,6 +2,8 @@
 ### simple SST for Gulf ESR draft
 
 rm(list = ls())
+cache_delete_all(force = FALSE)
+cache_list()
 
 plot.new()
 dev.off()
