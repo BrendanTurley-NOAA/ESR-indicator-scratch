@@ -4,6 +4,7 @@
 rm(list = ls())
 cache_delete_all(force = FALSE)
 cache_list()
+gc()
 
 plot.new()
 dev.off()
