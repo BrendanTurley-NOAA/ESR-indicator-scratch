@@ -1,25 +1,29 @@
 
 ### simple SST for Gulf ESR draft
 
-rm(list = ls())
-cache_delete_all(force = FALSE)
-cache_list()
-gc()
-
-plot.new()
-dev.off()
-
 library(lubridate)
 library(maps)
 library(rerddap)
 library(sf)
 library(terra)
 
+### clean up R envrionmenta
+rm(list = ls())
+gc(); gc()
+plot.new()
+dev.off()
+cache_delete_all(force = FALSE)
+cache_list()
+
 
 # define years  --------------------------------
 styear <- 1982
 enyear <- 2024
 ### 2025 is not completely online yet
+
+### error stopped after completing 2015
+styear <- 2016
+enyear <- 2024
 
 # define spatial domain  --------------------------------
 min_lon <- -80
@@ -48,11 +52,11 @@ for (yr in styear:enyear) {
                       latitude = c(min_lat, max_lat), 
                       fmt = 'csv')
   
-  ### whole Gulf
-  sst_gulf <- aggregate(sst_grab$sst, 
-                        by = list(sst_grab$time), 
-                        function(x) c(mean(x, na.rm = T), sd(x, na.rm = T),
-                                      min(x, na.rm = T), max(x, na.rm = T)))
+  # ### whole Gulf
+  # sst_gulf <- aggregate(sst_grab$sst, 
+  #                       by = list(sst_grab$time), 
+  #                       function(x) c(mean(x, na.rm = T), sd(x, na.rm = T),
+  #                                     min(x, na.rm = T), max(x, na.rm = T)))
   
   
   ### US EEZ
@@ -65,28 +69,44 @@ for (yr in styear:enyear) {
                                      min(x, na.rm = T), max(x, na.rm = T)))
   
   if (yr == styear) { 
-    dat_gulf <- sst_gulf
+    # dat_gulf <- sst_gulf
     dat_eez <- sst_eez
     } 
   else {
-    dat_gulf <- rbind(dat_gulf, sst_gulf)
+    # dat_gulf <- rbind(dat_gulf, sst_gulf)
     dat_eez <- rbind(dat_eez, sst_eez)
     }
 }
 
 ### temp file save
 setwd("~/R_projects/ESR-indicator-scratch/data/intermediate_files")
-save(dat_eez, dat_gulf, file = 'sst_temp.RData')
+# save(dat_gulf, file = 'dat_gulf_temp.RData')
+save(dat_eez, file = 'dat_eez_temp2.RData')
+# save(dat_eez, dat_gulf, file = 'sst_temp.RData')
+### check
+# rm(dat_eez, dat_gulf)
+# load('sst_temp.RData')
+# rm(dat_eez)
+load('dat_gulf_temp.RData')
+load('dat_eez_temp.RData')
+dat_eez1 <- dat_eez
+load('dat_eez_temp2.RData')
+
+dat_eez_com <- rbind(dat_eez1, dat_eez)
+
+dat_gulf <- data.frame(cbind(dat_gulf$Group.1, dat_gulf$x))
+names(dat_gulf) <- c("time", "sst_degC", "sd", 'min_degC', 'max_degC')
+dat_gulf <- type.convert(dat_gulf)
+
+dat_eez <- data.frame(cbind(dat_eez_com$Group.1, dat_eez_com$x))
+names(dat_eez) <- c("time", "sst_degC", "sd", 'min_degC', 'max_degC')
+dat_eez <- type.convert(dat_eez)
+
+rm(dat_eez_com, dat_eez)
+
+save(dat_gulf,dat_eez, file = 'sst_comb_temp.RData')
 
 
-
-dat <- data.frame(cbind(dat$Group.1, dat$x))
-names(dat) <- c("time", "sst", "sd")
-
-dat$sst <- as.numeric(dat$sst)
-dat$sd <- as.numeric(dat$sd)
-
-head(dat)
 
 # add yearmonth column --------------------------
 dat$year <- year(dat$time)
