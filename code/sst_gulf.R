@@ -179,8 +179,8 @@ gulf_yrmon <- aggregate(anom_degC ~ yrmon, data = dat_gulf,
 eez_yrmon <- aggregate(anom_degC ~ yrmon, data = dat_eez,
                        mean, na.rm = T)
 
-plot(seq(styear, enyear+.999, 1/12), gulf_yrmon$anom_degC, typ = 'l', lwd = 2)
-points(seq(styear, enyear+.999, 1/12), eez_yrmon$anom_degC, typ = 'l', lwd = 2, col = 2)
+plot(seq(styear, enyear+.999, 1/12), eez_yrmon$anom_degC, typ = 'l', lwd = 2)
+points(seq(styear, enyear+.999, 1/12), gulf_yrmon$anom_degC, typ = 'l', lwd = 2, col = 2)
 abline(h = 0, lty = 5)
 
 plot(seq(styear, enyear+.999, 1/12), eez_yrmon$anom_degC, typ = 'h', lwd = 2, col = 1)
