@@ -3,14 +3,15 @@
 # https://www.ncei.noaa.gov/products/climate-data-records/sea-surface-temperature-optimum-interpolation
 # https://upwell.pfeg.noaa.gov/erddap/info/ncdcOisst21Agg_LonPM180/index.html
 
+library(cmocean)
 library(fields)
 library(lubridate)
 library(ncdf4)
 library(sf)
 
 # define spatial domain  --------------------------------
-min_lon <- -80
-max_lon <- -98
+min_lon <- -98
+max_lon <- -80
 min_lat <- 18
 max_lat <- 31
 
@@ -28,16 +29,17 @@ lons <- lon[i_lon]
 lats <- lat[i_lat]
 
 # define time domain  --------------------------------
-years <- 1982:2024
+years <- 1982:2025
 
 
 system.time(
-  setwd("C:/Users/brendan.turley/Documents/R_projects/ESR-indicator-scratch/data/intermediate_files")
+  setwd("C:/Users/brendan.turley/Documents/R_projects/ESR-indicator-scratch/data/intermediate_files"),
   for(h in 1:length(years)){
     cat('\n', years[h], '\n')
     
-    dates <- seq(ymd(paste(years[h],'-01-01')),
-                 ymd(paste(years[h],'-12-31')))
+    dates <- seq(ymd(paste0(years[h],'-01-01')),
+                 ymd(paste0(years[h],'-12-31')),
+                 by = 'day')
     # dates |> as.character()
     dates <- gsub('-','',dates)
     nyr <- ifelse(leap_year(years[h]),366,365)
@@ -72,15 +74,16 @@ system.time(
   }
 )
 
-### problem with 2007
-years <- 2007:2024
+
+
 system.time(
   setwd("C:/Users/brendan.turley/Documents/R_projects/ESR-indicator-scratch/data/intermediate_files"),
   for(h in 1:length(years)){
     cat('\n', years[h], '\n')
     
-    dates <- seq(ymd(paste(years[h],'-01-01')),
-                 ymd(paste(years[h],'-12-31')))
+    dates <- seq(ymd(paste0(years[h],'-01-01')),
+                 ymd(paste0(years[h],'-12-31')),
+                 by = 'day')
     # dates |> as.character()
     dates <- gsub('-','',dates)
     nyr <- ifelse(leap_year(years[h]),366,365)
@@ -116,13 +119,49 @@ system.time(
 )
 
 setwd("C:/Users/brendan.turley/Documents/R_projects/ESR-indicator-scratch/data/intermediate_files")
-# saveRDS(paste0('sst_',years[i]), paste0('sst_',years[i]))
+anom_2021 <- readRDS('anom_2021')
+anom_2022 <- readRDS('anom_2022')
+anom_2023 <- readRDS('anom_2023')
+anom_2024 <- readRDS('anom_2024')
+anom_2025 <- readRDS('anom_2025')
 
-files <- ls()
-for(i in 1:19){
-  iy <- grep(paste0('sst_',years[i]), files)
-  saveRDS(get(files[iy]), paste0('sst_',years[i]))
+anom_a <- array(NA, dim = c(72,52,5))
+anom_a[,,1] <- apply(anom_2021$anom, c(1,2), mean, na.rm=T)
+anom_a[,,2] <- apply(anom_2022$anom, c(1,2), mean, na.rm=T)
+anom_a[,,3] <- apply(anom_2023$anom, c(1,2), mean, na.rm=T)
+anom_a[,,4] <- apply(anom_2024$anom, c(1,2), mean, na.rm=T)
+anom_a[,,5] <- apply(anom_2025$anom, c(1,2), mean, na.rm=T)
+
+y <- 1:dim(anom_a)[3]
+
+array_lm <- function (x){
+  if(is.na(all(x))){
+    NA
+  } else {
+    coef(lm(x~y))[2]
+  }
 }
+
+yr5_trend <- apply(anom_a, c(1,2), array_lm)
+hist(yr5_trend)
+range(yr5_trend, na.rm = T)
+
+imagePlot(yr5_trend)
+
+a_brks <- seq(-3,3,.1)
+a_cols <- cmocean('balance')(length(a_brks)-1)
+t_brks <- seq(-.35,.35,.01)
+t_cols <- cmocean('balance')(length(t_brks)-1)
+
+par(mfrow=c(2,3))
+imagePlot(-360+lons,lats,anom_a[,,1],breaks = a_brks, col = a_cols)
+imagePlot(-360+lons,lats,anom_a[,,2],breaks = a_brks, col = a_cols)
+imagePlot(-360+lons,lats,anom_a[,,3],breaks = a_brks, col = a_cols)
+imagePlot(-360+lons,lats,anom_a[,,4],breaks = a_brks, col = a_cols)
+imagePlot(-360+lons,lats,anom_a[,,5],breaks = a_brks, col = a_cols)
+imagePlot(-360+lons,lats, yr5_trend, breaks = t_brks, col = t_cols)
+
+
 
 
 url <- 'https://www.ncei.noaa.gov/thredds/dodsC/OisstBase/NetCDF/V2.1/AVHRR/198109/oisst-avhrr-v02r01.19810901.nc'
