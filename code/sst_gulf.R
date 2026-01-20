@@ -33,8 +33,19 @@ min_lat <- 18
 max_lat <- 31
 
 # load shapefile to subset  --------------------------------
-setwd("C:/Users/brendan.turley/Documents/data/shapefiles/Habitat_Zone")
-eez <- vect('gulf_eez.shp') |> makeValid() |> st_as_sf() |> st_transform(crs = st_crs(4326))
+# setwd("C:/Users/brendan.turley/Documents/data/shapefiles/Habitat_Zone")
+# eez <- vect('gulf_eez.shp') |> makeValid() |> st_as_sf() |> st_transform(crs = st_crs(4326))
+
+setwd('C:/Users/brendan.turley/Documents/data/shapefiles/gulf_eez')
+eez <- vect('eez.shp') |> makeValid() #|> st_as_sf() |> st_transform(crs = st_crs(4326))
+
+setwd('C:/Users/brendan.turley/Documents/data/shapefiles/gulf_iho')
+iho <- vect('iho.shp') |> makeValid() #|> st_as_sf() |> st_transform(crs = st_crs(4326))
+
+gulf_eez <- terra::intersect(eez, iho) |> st_as_sf() |> st_transform(crs = st_crs(4326))
+gulf_iho <- iho |> st_as_sf() |> st_transform(crs = st_crs(4326))
+
+rm(eez, iho); gc()
 
 # get ERDDAP info  --------------------------------
 sst <- info('ncdcOisst21Agg_LonPM180') # this may work better
@@ -46,27 +57,31 @@ dat_eez <- c()
 # download by year to avoid timeout errors --------------------
 for (yr in styear:enyear) { 
   
-  sst_grab <- griddap(sst, fields = 'sst', 
+  sst_grab <- griddap(sst, fields = c('anom','sst'), 
                       time = c(paste0(yr,'-01-01'), paste0(yr,'-12-31')),
                       longitude = c(min_lon, max_lon), 
                       latitude = c(min_lat, max_lat), 
                       fmt = 'csv')
   
-  ### whole Gulf
-  sst_gulf <- aggregate(sst_grab$sst,
-                        by = list(sst_grab$time),
-                        function(x) c(mean(x, na.rm = T), sd(x, na.rm = T),
-                                      min(x, na.rm = T), max(x, na.rm = T)))
+  ### whole Gulf / IHO
+  sst_iho_sf <- st_as_sf(sst_grab, coords = c("longitude", "latitude"), crs = 4326) |>
+    st_intersection(gulf_iho)
   
+  sst_gulf <- sst_iho_sf |>
+    st_drop_geometry() |> # dplyr is slow
+    group_by(time) |>
+    summarize(sst_degC = mean(sst, na.rm = T),
+              anom_degC = mean(anom, na.rm = T))
   
   ### US EEZ
-  sst_sf <- st_as_sf(sst_grab, coords = c("longitude", "latitude"), crs = 4326) |>
-    st_intersection(eez)
+  sst_eez_sf <- st_as_sf(sst_grab, coords = c("longitude", "latitude"), crs = 4326) |>
+    st_intersection(gulf_eez)
   
-  sst_eez <- aggregate(sst_sf$sst, 
-                       by = list(sst_sf$time), 
-                       function(x) c(mean(x, na.rm = T), sd(x, na.rm = T),
-                                     min(x, na.rm = T), max(x, na.rm = T)))
+  sst_eez <- sst_eez_sf |>
+    st_drop_geometry() |> # dplyr is slow
+    group_by(time) |>
+    summarize(sst_degC = mean(sst, na.rm = T),
+              anom_degC = mean(anom, na.rm = T))
   
   if (yr == styear) { 
     dat_gulf <- sst_gulf
@@ -77,7 +92,8 @@ for (yr in styear:enyear) {
     dat_eez <- rbind(dat_eez, sst_eez)
   }
 }
-# # dat_gulf25 <- dat_gulf
+
+# dat_gulf25 <- dat_gulf
 # dat_eez25 <- dat_eez
 
 ### temp file save
@@ -86,13 +102,10 @@ setwd("~/R_projects/ESR-indicator-scratch/data/intermediate_files")
 # save(dat_eez, file = 'dat_eez_temp2.RData')
 # save(dat_eez, dat_gulf, file = 'sst_temp.RData')
 ### check
-# rm(dat_eez, dat_gulf)
-# load('sst_temp.RData')
-# rm(dat_eez)
-# load('dat_gulf_temp.RData')
-# load('dat_eez_temp.RData')
-# dat_eez1 <- dat_eez
-# load('dat_eez_temp2.RData')
+load('dat_gulf_temp.RData')
+load('dat_eez_temp.RData')
+dat_eez1 <- dat_eez
+load('dat_eez_temp2.RData')
 
 # dat_gulf_com <- rbind(dat_gulf, dat_eez25)
 # dat_eez_com <- rbind(dat_eez1, dat_eez, dat_eez25)
@@ -154,7 +167,8 @@ dat_gulf <- subset(dat_gulf, year(time)<2011) |>
            month(time)>2 & month(time)<6 ~ 'spr',
            month(time)>5 & month(time)<9 ~ 'sum',
            month(time)>8 & month(time)<12 ~ 'aut'
-         ))
+         )) |>
+  arrange(time)
 
 dat_eez <- subset(dat_eez, year(time)<2011) |>
   group_by(jday) |>
@@ -166,11 +180,14 @@ dat_eez <- subset(dat_eez, year(time)<2011) |>
            month(time)>2 & month(time)<6 ~ 'spr',
            month(time)>5 & month(time)<9 ~ 'sum',
            month(time)>8 & month(time)<12 ~ 'aut'
-         ))
+         )) |>
+  arrange(time)
 
 
 
 # simple monthly plots --------------------------
+styear <- 1982
+enyear <- 2025
 
 gulf_yrmon <- aggregate(anom_degC ~ yrmon, data = dat_gulf,
                         mean, na.rm = T)
@@ -301,6 +318,8 @@ plot(eez_sum$`year(time)`, eez_sum$sst_degC,
 plot(eez_aut$`year(time)`, eez_aut$sst_degC,
      typ = 'o', pch = 16,
      panel.first = list(grid(),abline(h = 0, lty = 5)))
+
+
 
 
 ### to do
