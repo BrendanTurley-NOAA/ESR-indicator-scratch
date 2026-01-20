@@ -23,7 +23,7 @@ dat <- nc_open(url)
 lon <- ncvar_get(dat, 'lon')
 lat <- ncvar_get(dat, 'lat')
 
-i_lon <- which(lon >= (360+max_lon) & lon <= (360+min_lon))
+i_lon <- which(lon >= (360+min_lon) & lon <= (360+max_lon))
 i_lat <- which(lat <= (max_lat) & lat >= (min_lat))
 lons <- lon[i_lon]
 lats <- lat[i_lat]

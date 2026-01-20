@@ -91,6 +91,7 @@ for (yr in styear:enyear) {
     dat_gulf <- rbind(dat_gulf, sst_gulf)
     dat_eez <- rbind(dat_eez, sst_eez)
   }
+  save(dat_eez, dat_gulf, file = 'sst_loop_temp.RData')
 }
 
 # dat_gulf25 <- dat_gulf
