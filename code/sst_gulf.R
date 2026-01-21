@@ -217,6 +217,7 @@ plot(seq(styear, enyear+.999, 1/12), eez_yrmon$anom_degC,
 points(seq(styear, enyear+.999, 1/12), gulf_yrmon$anom_degC, typ = 'l', lwd = 2, col = 2)
 axis(1, seq(styear, enyear), labels = F, tck = .01)
 axis(4, seq(-4,4,2)*(5/9), seq(-4,4,2))
+points(seq(styear, enyear+.999, 1/12),stats::filter(eez_yrmon$anom_degC,rep(1/24,24)), typ ='l', col = 4, lwd = 3)
 
 plot(seq(styear, enyear+.999, 1/12), eez_yrmon$anom_degC, typ = 'h', lwd = 2, col = 1)
 points(seq(styear, enyear+.999, 1/12), gulf_yrmon$anom_degC, typ = 'h', lwd = 2, col = 2)
@@ -258,17 +259,21 @@ gulf_aut <- aggregate(anom_degC ~ season_yr, data = subset(dat_gulf, season=='au
 
 par(mfrow = c(2,2))
 plot(gulf_win$season_yr, gulf_win$anom_degC, 
-     typ = 'o', pch = 16,
-     panel.first = list(grid(),abline(h = 0, lty = 5)))
+     typ = 'o', pch = 16, ylim = c(-2,2),
+     panel.first = list(abline(lm(anom_degC ~ season_yr, data = gulf_win), lwd = 4, col = 'orange'),
+                        grid(),abline(h = 0, lty = 5, col = 'gray', lwd = 2)))
 plot(gulf_spr$season_yr, gulf_spr$anom_degC, 
-     typ = 'o', pch = 16,
-     panel.first = list(grid(),abline(h = 0, lty = 5)))
+     typ = 'o', pch = 16, ylim = c(-2,2),
+     panel.first = list(abline(lm(anom_degC ~ season_yr, data = gulf_spr), lwd = 4, col = 'orange'),
+                        grid(),abline(h = 0, lty = 5, col = 'gray', lwd = 2)))
 plot(gulf_sum$season_yr, gulf_sum$anom_degC, 
-     typ = 'o', pch = 16,
-     panel.first = list(grid(),abline(h = 0, lty = 5)))
+     typ = 'o', pch = 16, ylim = c(-2,2),
+     panel.first = list(abline(lm(anom_degC ~ season_yr, data = gulf_sum), lwd = 4, col = 'orange'),
+                        grid(),abline(h = 0, lty = 5, col = 'gray', lwd = 2)))
 plot(gulf_aut$season_yr, gulf_aut$anom_degC,
-     typ = 'o', pch = 16,
-     panel.first = list(grid(),abline(h = 0, lty = 5)))
+     typ = 'o', pch = 16, ylim = c(-2,2),
+     panel.first = list(abline(lm(anom_degC ~ season_yr, data = gulf_aut), lwd = 4, col = 'orange'),
+                        grid(),abline(h = 0, lty = 5, col = 'gray', lwd = 2)))
 
 eez_win <- aggregate(anom_degC ~ season_yr, data = subset(dat_eez, season=='win'),
                      mean, na.rm = T)
