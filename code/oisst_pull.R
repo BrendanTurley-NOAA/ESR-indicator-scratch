@@ -132,6 +132,13 @@ anom_a[,,3] <- apply(anom_2023$anom, c(1,2), mean, na.rm=T)
 anom_a[,,4] <- apply(anom_2024$anom, c(1,2), mean, na.rm=T)
 anom_a[,,5] <- apply(anom_2025$anom, c(1,2), mean, na.rm=T)
 
+anom_a <- array(NA, dim = c(72,52,1826))
+anom_a[,,1:365] <- anom_2021$anom
+anom_a[,,366:730] <- anom_2022$anom
+anom_a[,,731:1095] <- anom_2023$anom
+anom_a[,,1096:1461] <- anom_2024$anom
+anom_a[,,1462:1826] <- anom_2025$anom
+
 y <- 1:dim(anom_a)[3]
 
 array_lm <- function (x){
@@ -150,7 +157,7 @@ imagePlot(yr5_trend)
 
 a_brks <- seq(-3,3,.1)
 a_cols <- cmocean('balance')(length(a_brks)-1)
-t_brks <- seq(-.35,.35,.01)
+t_brks <- seq(-.342,.342,.02)
 t_cols <- cmocean('balance')(length(t_brks)-1)
 
 par(mfrow=c(2,3))

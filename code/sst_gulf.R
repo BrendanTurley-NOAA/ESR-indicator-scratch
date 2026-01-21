@@ -26,6 +26,10 @@ cache_list()
 styear <- 1982
 enyear <- 2025
 
+styear <- 2020
+enyear <- 2025
+
+
 # define spatial domain  --------------------------------
 min_lon <- -98
 max_lon <- -80
@@ -50,84 +54,112 @@ rm(eez, iho); gc()
 # get ERDDAP info  --------------------------------
 sst <- info('ncdcOisst21Agg_LonPM180') # this may work better
 
+
 # empty data  -------------------------------------------------
 dat_gulf <- c()
 dat_eez <- c()
 
 # download by year to avoid timeout errors --------------------
-for (yr in styear:enyear) { 
-  
-  sst_grab <- griddap(sst, fields = c('anom','sst'), 
-                      time = c(paste0(yr,'-01-01'), paste0(yr,'-12-31')),
-                      longitude = c(min_lon, max_lon), 
-                      latitude = c(min_lat, max_lat), 
-                      fmt = 'csv')
-  
-  ### whole Gulf / IHO
-  sst_iho_sf <- st_as_sf(sst_grab, coords = c("longitude", "latitude"), crs = 4326) |>
-    st_intersection(gulf_iho)
-  
-  sst_gulf <- sst_iho_sf |>
-    st_drop_geometry() |> # dplyr is slow
-    group_by(time) |>
-    summarize(sst_degC = mean(sst, na.rm = T),
-              anom_degC = mean(anom, na.rm = T))
-  
-  ### US EEZ
-  sst_eez_sf <- st_as_sf(sst_grab, coords = c("longitude", "latitude"), crs = 4326) |>
-    st_intersection(gulf_eez)
-  
-  sst_eez <- sst_eez_sf |>
-    st_drop_geometry() |> # dplyr is slow
-    group_by(time) |>
-    summarize(sst_degC = mean(sst, na.rm = T),
-              anom_degC = mean(anom, na.rm = T))
-  
-  if (yr == styear) { 
-    dat_gulf <- sst_gulf
-    dat_eez <- sst_eez
-  } 
-  else {
-    dat_gulf <- rbind(dat_gulf, sst_gulf)
-    dat_eez <- rbind(dat_eez, sst_eez)
+setwd("~/R_projects/ESR-indicator-scratch/data/intermediate_files")
+system.time(
+  for (yr in styear:enyear) { 
+    
+    cat('\n', yr, '\n')
+    
+    sst_grab <- griddap(sst, fields = c('anom','sst'), 
+                        time = c(paste0(yr,'-01-01'), paste0(yr,'-12-31')),
+                        longitude = c(min_lon, max_lon), 
+                        latitude = c(min_lat, max_lat), 
+                        fmt = 'csv')
+    
+    ### whole Gulf / IHO
+    sst_iho_sf <- st_as_sf(sst_grab, coords = c("longitude", "latitude"), crs = 4326) |>
+      st_intersection(gulf_iho)
+    
+    sst_gulf <- sst_iho_sf |>
+      st_drop_geometry() |> # dplyr is slow
+      group_by(time) |>
+      summarize(sst_degC = mean(sst, na.rm = T),
+                anom_degC = mean(anom, na.rm = T))
+    
+    ### US EEZ
+    sst_eez_sf <- st_as_sf(sst_grab, coords = c("longitude", "latitude"), crs = 4326) |>
+      st_intersection(gulf_eez)
+    
+    sst_eez <- sst_eez_sf |>
+      st_drop_geometry() |> # dplyr is slow
+      group_by(time) |>
+      summarize(sst_degC = mean(sst, na.rm = T),
+                anom_degC = mean(anom, na.rm = T))
+    
+    if (yr == styear) { 
+      dat_gulf <- sst_gulf
+      dat_eez <- sst_eez
+    } 
+    else {
+      dat_gulf <- rbind(dat_gulf, sst_gulf)
+      dat_eez <- rbind(dat_eez, sst_eez)
+    }
+    save(dat_eez, dat_gulf, file = 'sst_loop_temp2.RData')
   }
-  save(dat_eez, dat_gulf, file = 'sst_loop_temp.RData')
-}
+)
 
-# dat_gulf25 <- dat_gulf
-# dat_eez25 <- dat_eez
-
-### temp file save
-setwd("~/R_projects/ESR-indicator-scratch/data/intermediate_files")
-# save(dat_gulf, file = 'dat_gulf_temp.RData')
-# save(dat_eez, file = 'dat_eez_temp2.RData')
-# save(dat_eez, dat_gulf, file = 'sst_temp.RData')
-### check
-load('dat_gulf_temp.RData')
-load('dat_eez_temp.RData')
+load('sst_loop_temp.RData')
 dat_eez1 <- dat_eez
-load('dat_eez_temp2.RData')
+dat_gulf1 <- dat_gulf
+load('sst_loop_temp2.RData')
+dat_eez2 <- dat_eez
+dat_gulf2 <- dat_gulf
 
-# dat_gulf_com <- rbind(dat_gulf, dat_eez25)
-# dat_eez_com <- rbind(dat_eez1, dat_eez, dat_eez25)
-
-# dat_gulf <- data.frame(cbind(dat_gulf_com$Group.1, dat_gulf_com$x))
-# names(dat_gulf) <- c("time", "sst_degC", "sd", 'min_degC', 'max_degC')
-# dat_gulf <- type.convert(dat_gulf)
-
-# dat_eez <- data.frame(cbind(dat_eez_com$Group.1, dat_eez_com$x))
-# names(dat_eez) <- c("time", "sst_degC", "sd", 'min_degC', 'max_degC')
-# dat_eez <- type.convert(dat_eez)
-
-# rm(dat_eez_com, dat_eez)
+dat_eez <- rbind(dat_eez1, dat_eez2)
+dat_gulf <- rbind(dat_gulf1, dat_gulf2)
 
 setwd("~/R_projects/ESR-indicator-scratch/data/intermediate_files")
-# save(dat_gulf,dat_eez, file = 'sst_comb_temp.RData')
-load('sst_comb_temp.RData')
+save(dat_eez, dat_gulf, file = 'sst_comb_temp2.RData')
+load('sst_comb_temp2.RData')
 
 ### convert to dates
 dat_gulf$time <- as.Date(dat_gulf$time)
 dat_eez$time <- as.Date(dat_eez$time)
+
+table(year(dat_gulf$time),month(dat_gulf$time))
+table(year(dat_eez$time),month(dat_eez$time))
+
+# dat_gulf25 <- dat_gulf
+# dat_eez25 <- dat_eez
+
+# ### temp file save
+# setwd("~/R_projects/ESR-indicator-scratch/data/intermediate_files")
+# # save(dat_gulf, file = 'dat_gulf_temp.RData')
+# # save(dat_eez, file = 'dat_eez_temp2.RData')
+# # save(dat_eez, dat_gulf, file = 'sst_temp.RData')
+# ### check
+# load('dat_gulf_temp.RData')
+# load('dat_eez_temp.RData')
+# dat_eez1 <- dat_eez
+# load('dat_eez_temp2.RData')
+# 
+# # dat_gulf_com <- rbind(dat_gulf, dat_eez25)
+# # dat_eez_com <- rbind(dat_eez1, dat_eez, dat_eez25)
+# 
+# # dat_gulf <- data.frame(cbind(dat_gulf_com$Group.1, dat_gulf_com$x))
+# # names(dat_gulf) <- c("time", "sst_degC", "sd", 'min_degC', 'max_degC')
+# # dat_gulf <- type.convert(dat_gulf)
+# 
+# # dat_eez <- data.frame(cbind(dat_eez_com$Group.1, dat_eez_com$x))
+# # names(dat_eez) <- c("time", "sst_degC", "sd", 'min_degC', 'max_degC')
+# # dat_eez <- type.convert(dat_eez)
+# 
+# # rm(dat_eez_com, dat_eez)
+# 
+# setwd("~/R_projects/ESR-indicator-scratch/data/intermediate_files")
+# # save(dat_gulf,dat_eez, file = 'sst_comb_temp.RData')
+# load('sst_comb_temp.RData')
+# 
+# ### convert to dates
+# dat_gulf$time <- as.Date(dat_gulf$time)
+# dat_eez$time <- as.Date(dat_eez$time)
+
 
 # add yearmonth column --------------------------
 dat_gulf$yrmon <- paste(dat_gulf$time |> year(),
@@ -158,12 +190,34 @@ dat_eez$yrmon <- paste(dat_eez$time |> year(),
 dat_gulf$jday <- yday(dat_gulf$time)
 dat_eez$jday <- yday(dat_eez$time)
 
-dat_gulf <- subset(dat_gulf, year(time)<2011) |>
-  group_by(jday) |>
-  summarize(jday_m = mean(sst_degC, na.rm = T)) |>
-  full_join(dat_gulf) |>
-  mutate(anom_degC = sst_degC - jday_m,
-         season = case_when(
+# dat_gulf <- subset(dat_gulf, year(time)<2011) |>
+#   group_by(jday) |>
+#   summarize(jday_m = mean(sst_degC, na.rm = T)) |>
+#   full_join(dat_gulf) |>
+#   mutate(anom_degC = sst_degC - jday_m,
+#          season = case_when(
+#            month(time)==12 | month(time)<3 ~ 'win',
+#            month(time)>2 & month(time)<6 ~ 'spr',
+#            month(time)>5 & month(time)<9 ~ 'sum',
+#            month(time)>8 & month(time)<12 ~ 'aut'
+#          )) |>
+#   arrange(time)
+# 
+# dat_eez <- subset(dat_eez, year(time)<2011) |>
+#   group_by(jday) |>
+#   summarize(jday_m = mean(sst_degC, na.rm = T)) |>
+#   full_join(dat_eez) |>
+#   mutate(anom_degC = sst_degC - jday_m,
+#          season = case_when(
+#            month(time)==12 | month(time)<3 ~ 'win',
+#            month(time)>2 & month(time)<6 ~ 'spr',
+#            month(time)>5 & month(time)<9 ~ 'sum',
+#            month(time)>8 & month(time)<12 ~ 'aut'
+#          )) |>
+#   arrange(time)
+
+dat_gulf <- dat_gulf |>
+  mutate(season = case_when(
            month(time)==12 | month(time)<3 ~ 'win',
            month(time)>2 & month(time)<6 ~ 'spr',
            month(time)>5 & month(time)<9 ~ 'sum',
@@ -171,12 +225,8 @@ dat_gulf <- subset(dat_gulf, year(time)<2011) |>
          )) |>
   arrange(time)
 
-dat_eez <- subset(dat_eez, year(time)<2011) |>
-  group_by(jday) |>
-  summarize(jday_m = mean(sst_degC, na.rm = T)) |>
-  full_join(dat_eez) |>
-  mutate(anom_degC = sst_degC - jday_m,
-         season = case_when(
+dat_eez <- dat_eez |>
+  mutate(season = case_when(
            month(time)==12 | month(time)<3 ~ 'win',
            month(time)>2 & month(time)<6 ~ 'spr',
            month(time)>5 & month(time)<9 ~ 'sum',
@@ -206,7 +256,7 @@ plot(seq(styear, enyear+.999, 1/12), eez_yrmon$anom_degC - gulf_yrmon$anom_degC,
 plot(eez_yrmon$anom_degC, gulf_yrmon$anom_degC, asp = 1,
      panel.first = abline(0,1,lty=5))
 hist(eez_yrmon$anom_degC - gulf_yrmon$anom_degC)
-     
+
 # annual plots: mean, min, max --------------------------
 
 gulf_ann <- aggregate(anom_degC ~ year(time), data = dat_gulf,
@@ -227,13 +277,13 @@ dat_eez$season_yr <- ifelse(month(dat_eez$time)==12, year(dat_eez$time)+1, year(
 
 ### anomaly
 gulf_win <- aggregate(anom_degC ~ year(time), data = subset(dat_gulf, season=='win'),
-                     mean, na.rm = T)
+                      mean, na.rm = T)
 gulf_spr <- aggregate(anom_degC ~ year(time), data = subset(dat_gulf, season=='spr'),
-                     mean, na.rm = T)
+                      mean, na.rm = T)
 gulf_sum <- aggregate(anom_degC ~ year(time), data = subset(dat_gulf, season=='sum'),
-                     mean, na.rm = T)
+                      mean, na.rm = T)
 gulf_aut <- aggregate(anom_degC ~ year(time), data = subset(dat_gulf, season=='aut'),
-                     mean, na.rm = T)
+                      mean, na.rm = T)
 
 par(mfrow = c(2,2))
 plot(gulf_win$`year(time)`, gulf_win$anom_degC, 
