@@ -26,10 +26,6 @@ cache_list()
 styear <- 1982
 enyear <- 2025
 
-styear <- 2020
-enyear <- 2025
-
-
 # define spatial domain  --------------------------------
 min_lon <- -98
 max_lon <- -80
@@ -37,9 +33,6 @@ min_lat <- 18
 max_lat <- 31
 
 # load shapefile to subset  --------------------------------
-# setwd("C:/Users/brendan.turley/Documents/data/shapefiles/Habitat_Zone")
-# eez <- vect('gulf_eez.shp') |> makeValid() |> st_as_sf() |> st_transform(crs = st_crs(4326))
-
 setwd('C:/Users/brendan.turley/Documents/data/shapefiles/gulf_eez')
 eez <- vect('eez.shp') |> makeValid() #|> st_as_sf() |> st_transform(crs = st_crs(4326))
 
@@ -104,18 +97,18 @@ system.time(
   }
 )
 
-load('sst_loop_temp.RData')
-dat_eez1 <- dat_eez
-dat_gulf1 <- dat_gulf
-load('sst_loop_temp2.RData')
-dat_eez2 <- dat_eez
-dat_gulf2 <- dat_gulf
-
-dat_eez <- rbind(dat_eez1, dat_eez2)
-dat_gulf <- rbind(dat_gulf1, dat_gulf2)
+# load('sst_loop_temp.RData')
+# dat_eez1 <- dat_eez
+# dat_gulf1 <- dat_gulf
+# load('sst_loop_temp2.RData')
+# dat_eez2 <- dat_eez
+# dat_gulf2 <- dat_gulf
+# 
+# dat_eez <- rbind(dat_eez1, dat_eez2)
+# dat_gulf <- rbind(dat_gulf1, dat_gulf2)
 
 setwd("~/R_projects/ESR-indicator-scratch/data/intermediate_files")
-save(dat_eez, dat_gulf, file = 'sst_comb_temp2.RData')
+# save(dat_eez, dat_gulf, file = 'sst_comb_temp2.RData')
 load('sst_comb_temp2.RData')
 
 ### convert to dates
@@ -186,35 +179,9 @@ dat_eez$yrmon <- paste(dat_eez$time |> year(),
 
 
 
-### find ltm and create anom
+### add seasons
 dat_gulf$jday <- yday(dat_gulf$time)
 dat_eez$jday <- yday(dat_eez$time)
-
-# dat_gulf <- subset(dat_gulf, year(time)<2011) |>
-#   group_by(jday) |>
-#   summarize(jday_m = mean(sst_degC, na.rm = T)) |>
-#   full_join(dat_gulf) |>
-#   mutate(anom_degC = sst_degC - jday_m,
-#          season = case_when(
-#            month(time)==12 | month(time)<3 ~ 'win',
-#            month(time)>2 & month(time)<6 ~ 'spr',
-#            month(time)>5 & month(time)<9 ~ 'sum',
-#            month(time)>8 & month(time)<12 ~ 'aut'
-#          )) |>
-#   arrange(time)
-# 
-# dat_eez <- subset(dat_eez, year(time)<2011) |>
-#   group_by(jday) |>
-#   summarize(jday_m = mean(sst_degC, na.rm = T)) |>
-#   full_join(dat_eez) |>
-#   mutate(anom_degC = sst_degC - jday_m,
-#          season = case_when(
-#            month(time)==12 | month(time)<3 ~ 'win',
-#            month(time)>2 & month(time)<6 ~ 'spr',
-#            month(time)>5 & month(time)<9 ~ 'sum',
-#            month(time)>8 & month(time)<12 ~ 'aut'
-#          )) |>
-#   arrange(time)
 
 dat_gulf <- dat_gulf |>
   mutate(season = case_when(
@@ -248,6 +215,8 @@ eez_yrmon <- aggregate(anom_degC ~ yrmon, data = dat_eez,
 plot(seq(styear, enyear+.999, 1/12), eez_yrmon$anom_degC, 
      typ = 'l', lwd = 2, panel.first = list(grid(), abline(h = 0, lty = 5)))
 points(seq(styear, enyear+.999, 1/12), gulf_yrmon$anom_degC, typ = 'l', lwd = 2, col = 2)
+axis(1, seq(styear, enyear), labels = F, tck = .01)
+axis(4, seq(-4,4,2)*(5/9), seq(-4,4,2))
 
 plot(seq(styear, enyear+.999, 1/12), eez_yrmon$anom_degC, typ = 'h', lwd = 2, col = 1)
 points(seq(styear, enyear+.999, 1/12), gulf_yrmon$anom_degC, typ = 'h', lwd = 2, col = 2)
@@ -267,110 +236,136 @@ eez_ann <- aggregate(anom_degC ~ year(time), data = dat_eez,
 plot(styear:enyear, eez_ann$anom_degC, typ = 'o', lwd = 2,
      panel.first = list(grid(), abline(h = 0, lty = 5)))
 points(styear:enyear, gulf_ann$anom_degC, typ = 'o', lwd = 2, col = 2)
-
+axis(1, seq(styear, enyear), labels = F, tck = .01)
+axis(4, seq(-2,2,.5)*(5/9), seq(-2,2,.5))
 
 
 ### seasonal means
 dat_gulf$season_yr <- ifelse(month(dat_gulf$time)==12, year(dat_gulf$time)+1, year(dat_gulf$time))
 dat_eez$season_yr <- ifelse(month(dat_eez$time)==12, year(dat_eez$time)+1, year(dat_eez$time))
-
+dat_gulf$season_yr[which(dat_gulf$season_yr==2026)] <- NA
+dat_eez$season_yr[which(dat_eez$season_yr==2026)] <- NA
 
 ### anomaly
-gulf_win <- aggregate(anom_degC ~ year(time), data = subset(dat_gulf, season=='win'),
+gulf_win <- aggregate(anom_degC ~ season_yr, data = subset(dat_gulf, season=='win'),
                       mean, na.rm = T)
-gulf_spr <- aggregate(anom_degC ~ year(time), data = subset(dat_gulf, season=='spr'),
+gulf_spr <- aggregate(anom_degC ~ season_yr, data = subset(dat_gulf, season=='spr'),
                       mean, na.rm = T)
-gulf_sum <- aggregate(anom_degC ~ year(time), data = subset(dat_gulf, season=='sum'),
+gulf_sum <- aggregate(anom_degC ~ season_yr, data = subset(dat_gulf, season=='sum'),
                       mean, na.rm = T)
-gulf_aut <- aggregate(anom_degC ~ year(time), data = subset(dat_gulf, season=='aut'),
+gulf_aut <- aggregate(anom_degC ~ season_yr, data = subset(dat_gulf, season=='aut'),
                       mean, na.rm = T)
 
 par(mfrow = c(2,2))
-plot(gulf_win$`year(time)`, gulf_win$anom_degC, 
+plot(gulf_win$season_yr, gulf_win$anom_degC, 
      typ = 'o', pch = 16,
      panel.first = list(grid(),abline(h = 0, lty = 5)))
-plot(gulf_spr$`year(time)`, gulf_spr$anom_degC, 
+plot(gulf_spr$season_yr, gulf_spr$anom_degC, 
      typ = 'o', pch = 16,
      panel.first = list(grid(),abline(h = 0, lty = 5)))
-plot(gulf_sum$`year(time)`, gulf_sum$anom_degC, 
+plot(gulf_sum$season_yr, gulf_sum$anom_degC, 
      typ = 'o', pch = 16,
      panel.first = list(grid(),abline(h = 0, lty = 5)))
-plot(gulf_aut$`year(time)`, gulf_aut$anom_degC,
+plot(gulf_aut$season_yr, gulf_aut$anom_degC,
      typ = 'o', pch = 16,
      panel.first = list(grid(),abline(h = 0, lty = 5)))
 
-eez_win <- aggregate(anom_degC ~ year(time), data = subset(dat_eez, season=='win'),
+eez_win <- aggregate(anom_degC ~ season_yr, data = subset(dat_eez, season=='win'),
                      mean, na.rm = T)
-eez_spr <- aggregate(anom_degC ~ year(time), data = subset(dat_eez, season=='spr'),
+eez_spr <- aggregate(anom_degC ~ season_yr, data = subset(dat_eez, season=='spr'),
                      mean, na.rm = T)
-eez_sum <- aggregate(anom_degC ~ year(time), data = subset(dat_eez, season=='sum'),
+eez_sum <- aggregate(anom_degC ~ season_yr, data = subset(dat_eez, season=='sum'),
                      mean, na.rm = T)
-eez_aut <- aggregate(anom_degC ~ year(time), data = subset(dat_eez, season=='aut'),
+eez_aut <- aggregate(anom_degC ~ season_yr, data = subset(dat_eez, season=='aut'),
                      mean, na.rm = T)
 
 par(mfrow = c(2,2))
-plot(eez_win$`year(time)`, eez_win$anom_degC, 
-     typ = 'o', pch = 16,
-     panel.first = list(grid(),abline(h = 0, lty = 5)))
-plot(eez_spr$`year(time)`, eez_spr$anom_degC, 
-     typ = 'o', pch = 16,
-     panel.first = list(grid(),abline(h = 0, lty = 5)))
-plot(eez_sum$`year(time)`, eez_sum$anom_degC, 
-     typ = 'o', pch = 16,
-     panel.first = list(grid(),abline(h = 0, lty = 5)))
-plot(eez_aut$`year(time)`, eez_aut$anom_degC,
-     typ = 'o', pch = 16,
-     panel.first = list(grid(),abline(h = 0, lty = 5)))
+plot(eez_win$season_yr, eez_win$anom_degC, 
+     typ = 'o', pch = 16, ylim = c(-2,2),
+     panel.first = list(abline(lm(anom_degC ~ season_yr, data = eez_win), lwd = 4, col = 'orange'),
+                        grid(),abline(h = 0, lty = 5, col = 'gray', lwd = 2)))
+plot(eez_spr$season_yr, eez_spr$anom_degC, 
+     typ = 'o', pch = 16, ylim = c(-2,2),
+     panel.first = list(abline(lm(anom_degC ~ season_yr, data = eez_spr), lwd = 4, col = 'orange'),
+                        grid(),abline(h = 0, lty = 5, col = 'gray', lwd = 2)))
+plot(eez_sum$season_yr, eez_sum$anom_degC, 
+     typ = 'o', pch = 16, ylim = c(-2,2),
+     panel.first = list(abline(lm(anom_degC ~ season_yr, data = eez_sum), lwd = 4, col = 'orange'),
+                        grid(),abline(h = 0, lty = 5, col = 'gray', lwd = 2)))
+plot(eez_aut$season_yr, eez_aut$anom_degC,
+     typ = 'o', pch = 16, ylim = c(-2,2),
+     panel.first = list(abline(lm(anom_degC ~ season_yr, data = eez_aut), lwd = 4, col = 'orange'),
+                        grid(),abline(h = 0, lty = 5, col = 'gray', lwd = 2)))
 
 
 ### degC
-gulf_win <- aggregate(sst_degC ~ year(time), data = subset(dat_gulf, season=='win'),
+gulf_win <- aggregate(sst_degC ~ season_yr, data = subset(dat_gulf, season=='win'),
                       mean, na.rm = T)
-gulf_spr <- aggregate(sst_degC ~ year(time), data = subset(dat_gulf, season=='spr'),
+gulf_spr <- aggregate(sst_degC ~ season_yr, data = subset(dat_gulf, season=='spr'),
                       mean, na.rm = T)
-gulf_sum <- aggregate(sst_degC ~ year(time), data = subset(dat_gulf, season=='sum'),
+gulf_sum <- aggregate(sst_degC ~ season_yr, data = subset(dat_gulf, season=='sum'),
                       mean, na.rm = T)
-gulf_aut <- aggregate(sst_degC ~ year(time), data = subset(dat_gulf, season=='aut'),
+gulf_aut <- aggregate(sst_degC ~ season_yr, data = subset(dat_gulf, season=='aut'),
                       mean, na.rm = T)
 
 par(mfrow = c(2,2))
-plot(gulf_win$`year(time)`, gulf_win$sst_degC, 
+plot(gulf_win$season_yr, gulf_win$sst_degC, 
      typ = 'o', pch = 16,
      panel.first = list(grid(),abline(h = 0, lty = 5)))
-plot(gulf_spr$`year(time)`, gulf_spr$sst_degC, 
+plot(gulf_spr$season_yr, gulf_spr$sst_degC, 
      typ = 'o', pch = 16,
      panel.first = list(grid(),abline(h = 0, lty = 5)))
-plot(gulf_sum$`year(time)`, gulf_sum$sst_degC, 
+plot(gulf_sum$season_yr, gulf_sum$sst_degC, 
      typ = 'o', pch = 16,
      panel.first = list(grid(),abline(h = 0, lty = 5)))
-plot(gulf_aut$`year(time)`, gulf_aut$sst_degC,
+plot(gulf_aut$season_yr, gulf_aut$sst_degC,
      typ = 'o', pch = 16,
      panel.first = list(grid(),abline(h = 0, lty = 5)))
 
-eez_win <- aggregate(sst_degC ~ year(time), data = subset(dat_eez, season=='win'),
+plot(gulf_win$season_yr, gulf_win$sst_degC, 
+     typ = 'o', pch = 16, col = 4,
+     panel.first = list(grid(),abline(h = 0, lty = 5)),
+     ylim = c(21,31))
+points(gulf_spr$season_yr, gulf_spr$sst_degC, 
+       typ = 'o', pch = 16, col = 3)
+points(gulf_sum$season_yr, gulf_sum$sst_degC, 
+       typ = 'o', pch = 16, col = 2)
+points(gulf_aut$season_yr, gulf_aut$sst_degC,
+       typ = 'o', pch = 16, col = 'orange')
+
+eez_win <- aggregate(sst_degC ~ season_yr, data = subset(dat_eez, season=='win'),
                      mean, na.rm = T)
-eez_spr <- aggregate(sst_degC ~ year(time), data = subset(dat_eez, season=='spr'),
+eez_spr <- aggregate(sst_degC ~ season_yr, data = subset(dat_eez, season=='spr'),
                      mean, na.rm = T)
-eez_sum <- aggregate(sst_degC ~ year(time), data = subset(dat_eez, season=='sum'),
+eez_sum <- aggregate(sst_degC ~ season_yr, data = subset(dat_eez, season=='sum'),
                      mean, na.rm = T)
-eez_aut <- aggregate(sst_degC ~ year(time), data = subset(dat_eez, season=='aut'),
+eez_aut <- aggregate(sst_degC ~ season_yr, data = subset(dat_eez, season=='aut'),
                      mean, na.rm = T)
 
 par(mfrow = c(2,2))
-plot(eez_win$`year(time)`, eez_win$sst_degC, 
+plot(eez_win$season_yr, eez_win$sst_degC, 
      typ = 'o', pch = 16,
      panel.first = list(grid(),abline(h = 0, lty = 5)))
-plot(eez_spr$`year(time)`, eez_spr$sst_degC, 
+plot(eez_spr$season_yr, eez_spr$sst_degC, 
      typ = 'o', pch = 16,
      panel.first = list(grid(),abline(h = 0, lty = 5)))
-plot(eez_sum$`year(time)`, eez_sum$sst_degC, 
+plot(eez_sum$season_yr, eez_sum$sst_degC, 
      typ = 'o', pch = 16,
      panel.first = list(grid(),abline(h = 0, lty = 5)))
-plot(eez_aut$`year(time)`, eez_aut$sst_degC,
+plot(eez_aut$season_yr, eez_aut$sst_degC,
      typ = 'o', pch = 16,
      panel.first = list(grid(),abline(h = 0, lty = 5)))
 
-
+plot(eez_win$season_yr, eez_win$sst_degC, 
+     typ = 'o', pch = 16, col = 4,
+     panel.first = list(grid(),abline(h = 0, lty = 5)),
+     ylim = c(20,31))
+points(eez_spr$season_yr, eez_spr$sst_degC, 
+       typ = 'o', pch = 16, col = 3)
+points(eez_sum$season_yr, eez_sum$sst_degC, 
+       typ = 'o', pch = 16, col = 2)
+points(eez_aut$season_yr, eez_aut$sst_degC,
+       typ = 'o', pch = 16, col = 'orange')
 
 
 ### to do
