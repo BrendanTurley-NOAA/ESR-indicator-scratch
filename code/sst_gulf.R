@@ -261,19 +261,19 @@ par(mfrow = c(2,2))
 plot(gulf_win$season_yr, gulf_win$anom_degC, 
      typ = 'o', pch = 16, ylim = c(-2,2),
      panel.first = list(abline(lm(anom_degC ~ season_yr, data = gulf_win), lwd = 4, col = 'orange'),
-                        grid(),abline(h = 0, lty = 5, col = 'gray', lwd = 2)))
+                        grid(),abline(h = 0, col = 'gray', lwd = 2)))
 plot(gulf_spr$season_yr, gulf_spr$anom_degC, 
      typ = 'o', pch = 16, ylim = c(-2,2),
      panel.first = list(abline(lm(anom_degC ~ season_yr, data = gulf_spr), lwd = 4, col = 'orange'),
-                        grid(),abline(h = 0, lty = 5, col = 'gray', lwd = 2)))
+                        grid(),abline(h = 0, col = 'gray', lwd = 2)))
 plot(gulf_sum$season_yr, gulf_sum$anom_degC, 
      typ = 'o', pch = 16, ylim = c(-2,2),
      panel.first = list(abline(lm(anom_degC ~ season_yr, data = gulf_sum), lwd = 4, col = 'orange'),
-                        grid(),abline(h = 0, lty = 5, col = 'gray', lwd = 2)))
+                        grid(),abline(h = 0, col = 'gray', lwd = 2)))
 plot(gulf_aut$season_yr, gulf_aut$anom_degC,
      typ = 'o', pch = 16, ylim = c(-2,2),
      panel.first = list(abline(lm(anom_degC ~ season_yr, data = gulf_aut), lwd = 4, col = 'orange'),
-                        grid(),abline(h = 0, lty = 5, col = 'gray', lwd = 2)))
+                        grid(),abline(h = 0, col = 'gray', lwd = 2)))
 
 eez_win <- aggregate(anom_degC ~ season_yr, data = subset(dat_eez, season=='win'),
                      mean, na.rm = T)
@@ -288,19 +288,19 @@ par(mfrow = c(2,2))
 plot(eez_win$season_yr, eez_win$anom_degC, 
      typ = 'o', pch = 16, ylim = c(-2,2),
      panel.first = list(abline(lm(anom_degC ~ season_yr, data = eez_win), lwd = 4, col = 'orange'),
-                        grid(),abline(h = 0, lty = 5, col = 'gray', lwd = 2)))
+                        grid(),abline(h = 0, col = 'gray', lwd = 2)))
 plot(eez_spr$season_yr, eez_spr$anom_degC, 
      typ = 'o', pch = 16, ylim = c(-2,2),
      panel.first = list(abline(lm(anom_degC ~ season_yr, data = eez_spr), lwd = 4, col = 'orange'),
-                        grid(),abline(h = 0, lty = 5, col = 'gray', lwd = 2)))
+                        grid(),abline(h = 0, col = 'gray', lwd = 2)))
 plot(eez_sum$season_yr, eez_sum$anom_degC, 
      typ = 'o', pch = 16, ylim = c(-2,2),
      panel.first = list(abline(lm(anom_degC ~ season_yr, data = eez_sum), lwd = 4, col = 'orange'),
-                        grid(),abline(h = 0, lty = 5, col = 'gray', lwd = 2)))
+                        grid(),abline(h = 0, col = 'gray', lwd = 2)))
 plot(eez_aut$season_yr, eez_aut$anom_degC,
      typ = 'o', pch = 16, ylim = c(-2,2),
      panel.first = list(abline(lm(anom_degC ~ season_yr, data = eez_aut), lwd = 4, col = 'orange'),
-                        grid(),abline(h = 0, lty = 5, col = 'gray', lwd = 2)))
+                        grid(),abline(h = 0, col = 'gray', lwd = 2)))
 
 
 ### degC
@@ -316,20 +316,28 @@ gulf_aut <- aggregate(sst_degC ~ season_yr, data = subset(dat_gulf, season=='aut
 par(mfrow = c(2,2))
 plot(gulf_win$season_yr, gulf_win$sst_degC, 
      typ = 'o', pch = 16,
-     panel.first = list(grid(),abline(h = 0, lty = 5)))
+     panel.first = list(abline(lm(sst_degC ~ season_yr, data = gulf_win), lwd = 4, col = 'orange'),
+                        abline(h = mean(gulf_win$sst_degC), col = 'gray', lwd = 2),
+                        grid()))
 plot(gulf_spr$season_yr, gulf_spr$sst_degC, 
      typ = 'o', pch = 16,
-     panel.first = list(grid(),abline(h = 0, lty = 5)))
+     panel.first = list(abline(lm(sst_degC ~ season_yr, data = gulf_spr), lwd = 4, col = 'orange'),
+                        abline(h = mean(gulf_spr$sst_degC), col = 'gray', lwd = 2),
+                        grid()))
 plot(gulf_sum$season_yr, gulf_sum$sst_degC, 
      typ = 'o', pch = 16,
-     panel.first = list(grid(),abline(h = 0, lty = 5)))
+     panel.first = list(abline(lm(sst_degC ~ season_yr, data = gulf_sum), lwd = 4, col = 'orange'),
+                        abline(h = mean(gulf_sum$sst_degC), col = 'gray', lwd = 2),
+                        grid()))
 plot(gulf_aut$season_yr, gulf_aut$sst_degC,
      typ = 'o', pch = 16,
-     panel.first = list(grid(),abline(h = 0, lty = 5)))
+     panel.first = list(abline(lm(sst_degC ~ season_yr, data = gulf_aut), lwd = 4, col = 'orange'),
+                        abline(h = mean(gulf_aut$sst_degC), col = 'gray', lwd = 2),
+                        grid()))
 
 plot(gulf_win$season_yr, gulf_win$sst_degC, 
      typ = 'o', pch = 16, col = 4,
-     panel.first = list(grid(),abline(h = 0, lty = 5)),
+     panel.first = list(grid()),
      ylim = c(21,31))
 points(gulf_spr$season_yr, gulf_spr$sst_degC, 
        typ = 'o', pch = 16, col = 3)
@@ -350,20 +358,28 @@ eez_aut <- aggregate(sst_degC ~ season_yr, data = subset(dat_eez, season=='aut')
 par(mfrow = c(2,2))
 plot(eez_win$season_yr, eez_win$sst_degC, 
      typ = 'o', pch = 16,
-     panel.first = list(grid(),abline(h = 0, lty = 5)))
+     panel.first = list(abline(lm(sst_degC ~ season_yr, data = eez_win), lwd = 4, col = 'orange'),
+                        abline(h = mean(eez_win$sst_degC), col = 'gray', lwd = 2),
+                        grid()))
 plot(eez_spr$season_yr, eez_spr$sst_degC, 
      typ = 'o', pch = 16,
-     panel.first = list(grid(),abline(h = 0, lty = 5)))
+     panel.first = list(abline(lm(sst_degC ~ season_yr, data = eez_spr), lwd = 4, col = 'orange'),
+                        abline(h = mean(eez_spr$sst_degC), col = 'gray', lwd = 2),
+                        grid()))
 plot(eez_sum$season_yr, eez_sum$sst_degC, 
      typ = 'o', pch = 16,
-     panel.first = list(grid(),abline(h = 0, lty = 5)))
+     panel.first = list(abline(lm(sst_degC ~ season_yr, data = eez_sum), lwd = 4, col = 'orange'),
+                        abline(h = mean(eez_sum$sst_degC), col = 'gray', lwd = 2),
+                        grid()))
 plot(eez_aut$season_yr, eez_aut$sst_degC,
      typ = 'o', pch = 16,
-     panel.first = list(grid(),abline(h = 0, lty = 5)))
+     panel.first = list(abline(lm(sst_degC ~ season_yr, data = eez_aut), lwd = 4, col = 'orange'),
+                        abline(h = mean(eez_aut$sst_degC), col = 'gray', lwd = 2),
+                        grid()))
 
 plot(eez_win$season_yr, eez_win$sst_degC, 
      typ = 'o', pch = 16, col = 4,
-     panel.first = list(grid(),abline(h = 0, lty = 5)),
+     panel.first = list(grid()),
      ylim = c(20,31))
 points(eez_spr$season_yr, eez_spr$sst_degC, 
        typ = 'o', pch = 16, col = 3)

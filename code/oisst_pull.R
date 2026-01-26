@@ -170,6 +170,10 @@ imagePlot(-360+lons,lats, yr5_trend, breaks = t_brks, col = t_cols)
 
 
 
+### make seasonal maps
+
+
+
 
 url <- 'https://www.ncei.noaa.gov/thredds/dodsC/OisstBase/NetCDF/V2.1/AVHRR/198109/oisst-avhrr-v02r01.19810901.nc'
 
