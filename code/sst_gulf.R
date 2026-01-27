@@ -338,7 +338,7 @@ plot(gulf_aut$season_yr, gulf_aut$sst_degC,
 plot(gulf_win$season_yr, gulf_win$sst_degC, 
      typ = 'o', pch = 16, col = 4,
      panel.first = list(grid()),
-     ylim = c(21,31))
+     ylim = c(20,31))
 points(gulf_spr$season_yr, gulf_spr$sst_degC, 
        typ = 'o', pch = 16, col = 3)
 points(gulf_sum$season_yr, gulf_sum$sst_degC, 

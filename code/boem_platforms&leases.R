@@ -88,6 +88,7 @@ write.csv(plt_yr, 'platforms_yr.csv', row.names = F)
 
 
 # leases ------------------------------------------------------------------
+library(lubridate)
 
 temp_file <- tempfile()
 temp_dir <- tempdir()
@@ -116,7 +117,11 @@ for(i in yrs){
                             nlease = lease_i)
   n <- n + 1
 }
-lease_yr <- list_rbind(lease_yr)
+# lease_yr <- list_rbind(lease_yr)
+lease_yr <- unlist(lease_yr) |> 
+  matrix(90,2,byrow=T) |> 
+  as.data.frame() |> 
+  setNames(c('year','nlease'))
 # leases_year <- merge(full_yrs, lease_yr, by = 'year', all = T)
 
 plot(lease_yr$year, lease_yr$nlease, typ = 'l', lwd = 2)
@@ -124,4 +129,4 @@ plot(lease_yr$year, lease_yr$nlease, typ = 'l', lwd = 2)
 
 setwd("~/R_projects/ESR-indicator-scratch/data/processed")
 write.csv(lease_yr, 'leases_yr.csv', row.names = F)
-
+lease_yr <- read.csv('leases_yr.csv')
