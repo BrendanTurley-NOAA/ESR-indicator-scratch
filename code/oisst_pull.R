@@ -170,7 +170,113 @@ imagePlot(-360+lons,lats, yr5_trend, breaks = t_brks, col = t_cols)
 
 
 
+imagePlot(-360+lons,lats,
+          apply(anom_2025$anom, c(1,2), mean, na.rm=T),
+          breaks = a_brks, col = a_cols)
+
+
+t_brks <- seq(-.001,.001, .00005)
+t_cols <- cmocean('balance')(length(t_brks)-1)
+imagePlot(-360+lons,lats, yr5_trend, breaks = t_brks, col = t_cols)
+
 ### make seasonal maps
+
+anom_2024$time_df <- data.frame(time = anom_2024$time)
+anom_2025$time_df <- data.frame(time = anom_2025$time)
+  
+anom_2024$time_df <- anom_2024$time_df |>
+  mutate(season = case_when(
+    month(time)==12 | month(time)<3 ~ 'win',
+    month(time)>2 & month(time)<6 ~ 'spr',
+    month(time)>5 & month(time)<9 ~ 'sum',
+    month(time)>8 & month(time)<12 ~ 'aut'
+  )) |>
+  arrange(time)
+
+anom_2025$time_df <- anom_2025$time_df |>
+  mutate(season = case_when(
+    month(time)==12 | month(time)<3 ~ 'win',
+    month(time)>2 & month(time)<6 ~ 'spr',
+    month(time)>5 & month(time)<9 ~ 'sum',
+    month(time)>8 & month(time)<12 ~ 'aut'
+  )) |>
+  arrange(time)
+
+win_2025 <- anom_2025$anom[,,which(month(anom_2025$time_df$time)<3)] |>
+  abind(anom_2024$anom[,,which(month(anom_2024$time_df$time)>11)], along = 3) |>
+  apply(c(1,2), mean, na.rm = T)
+spr_2025 <- anom_2025$anom[,,which(anom_2025$time_df$season=='spr')] |>
+  apply(c(1,2), mean, na.rm = T)
+sum_2025 <- anom_2025$anom[,,which(anom_2025$time_df$season=='sum')] |>
+  apply(c(1,2), mean, na.rm = T)
+aut_2025 <- anom_2025$anom[,,which(anom_2025$time_df$season=='aut')] |>
+  apply(c(1,2), mean, na.rm = T)
+
+replace_min_max <- function(dat, min, max){
+  dat[which(dat < min)] <- min
+  dat[which(dat > max)] <- max
+  dat
+}
+
+tmin <- -3.5
+tmax <- 3
+win_2025 <- replace_min_max(win_2025, tmin, tmax)
+spr_2025 <- replace_min_max(spr_2025, tmin, tmax)
+sum_2025 <- replace_min_max(sum_2025, tmin, tmax)
+aut_2025 <- replace_min_max(aut_2025, tmin, tmax)
+
+a_brks <- seq(tmin, tmax, .1)
+a_cols <- cmocean('balance')(length(a_brks)-1)
+
+par(mfrow=c(2,2))
+imagePlot(-360+lons,lats,
+          win_2025, 
+          breaks = a_brks, col = a_cols, asp = 1,
+          xlab = 'Longitude (°W)', ylab = 'Latitude (°N)')
+plot(gulf_eez['geometry'], add = T, fill=NA)
+imagePlot(-360+lons,lats,
+          spr_2025, 
+          breaks = a_brks, col = a_cols, asp = 1,
+          xlab = 'Longitude (°W)', ylab = 'Latitude (°N)')
+plot(gulf_eez['geometry'], add = T, fill=NA)
+imagePlot(-360+lons,lats,
+          sum_2025, 
+          breaks = a_brks, col = a_cols, asp = 1,
+          xlab = 'Longitude (°W)', ylab = 'Latitude (°N)')
+plot(gulf_eez['geometry'], add = T, fill=NA)
+imagePlot(-360+lons,lats,
+          aut_2025, 
+          breaks = a_brks, col = a_cols, asp = 1,
+          xlab = 'Longitude (°W)', ylab = 'Latitude (°N)')
+plot(gulf_eez['geometry'], add = T, fill=NA)
+
+
+
+i=1
+par(mfrow=c(3,4))
+a_brks <- seq(tmin, tmax, .1)
+a_cols <- cmocean('balance')(length(a_brks)-1)
+for(i in 1:12){
+  month_i <- anom_2025$anom[,,which(month(anom_2025$time_df$time)==i)]|>
+    apply(c(1,2), mean, na.rm = T)
+  
+  tmin <- -3
+  tmax <- 3
+  month_i <- replace_min_max(month_i, tmin, tmax)
+  
+  month_i_rast <- rast(t(month_i[,ncol(month_i):1]))
+  ext(month_i_rast) <- c(min_lon,max_lon,min_lat,max_lat)
+  crs(month_i_rast) <- "EPSG:4326"
+  
+  
+  plot(month_i_rast,
+       col = a_cols, range = c(tmin, tmax),
+       plg = list(tick = 'out', format='g'),
+       main = paste0('month',i))
+  # plot(world, add= T, col = 'gray')
+  plot(gulf_eez['geometry'], add = T)
+}
+
 
 
 
