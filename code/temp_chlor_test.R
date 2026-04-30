@@ -85,6 +85,7 @@ path_copernicusmarine <- "C:/Users/brendan.turley/Documents/data/copernicusmarin
 
 # GLORYS Analysis/Forecast --------------------------------------------------------------
 output_directory = "C:/Users/brendan.turley/Documents/data/copernicusmarine/chl/"
+output_directory = "C:/Users/brendan.turley/Documents/data/copernicusmarine/"
 
 'cmems_obs-oc_glo_bgc-plankton_my_l4-multi-4km_P1M'
 dataset_id <- 'c3s_obs-oc_glo_bgc-plankton_my_l4-multi-4km_P1M'
@@ -95,7 +96,8 @@ min_lon <- -98
 max_lon <- -80
 min_lat <- 18
 max_lat <- 31
-years <- 1997:2024
+# years <- 1997:2024
+years <- 2024
 
 for(i in years){
   
@@ -122,8 +124,9 @@ for(i in years){
     "--maximum-longitude", max_lon,
     "--minimum-latitude", min_lat,
     "--maximum-latitude", max_lat,
-    "-o", output_directory,
+    "-o", shQuote(output_directory),
     '-f', output_filename,
+    '--verbose',
     sep = " "
   )
   
