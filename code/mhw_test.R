@@ -67,6 +67,9 @@ setwd("~/R_projects/ESR-indicator-scratch/data/intermediate_files")
 writeCDF(ann_gwide, 'oisst_gulf.nc',overwrite=TRUE)
 dat <- nc_open('oisst_gulf.nc')
 data <- ncvar_get(dat, 'oisst_gulf')
+lon <- ncvar_get(dat, 'longitude')
+lat <- ncvar_get(dat, 'latitude')
+lon_lat <- expand.grid(lon = lon,lat = lat)
 
 dat_m <- apply(data,c(1,2),mean,na.rm=T)
 ngrid <- length(which(!is.na(dat_m)))
@@ -219,3 +222,68 @@ for(i in 1:4){
   }
   print(mod)
 }
+
+
+
+### what/where are the cell #
+
+cell_ll <- unique(mhw_cube[, c("cell", "x", 'y')]) |>
+  setNames(c('cell','lon','lat'))
+
+plot(mhw_cube$x, mhw_cube$y)
+
+event_no <- aggregate(event_no ~ cell, data = mhw_cube, length)
+hist(event_no$event_no)
+
+gridcell <- cell_ll |>
+  merge(event_no) |>
+  merge(lon_lat, all = T)
+
+library(fields)
+imagePlot(lon, rev(lat),
+          t(matrix(gridcell$event_no, 29, 69)), asp = T)
+
+
+event_no_yr <- aggregate(event_no ~ cell + year(index_start), data = mhw_cube, length) |>
+  setNames(c('cell','year','event_no'))
+table(event_no_yr$cell) |> hist()
+event_no_mean <- aggregate(event_no ~ cell, data = event_no_yr, mean, na.rm = T) |>
+  merge(cell_ll, all = T) |>
+  merge(lon_lat, all = T)
+
+imagePlot(lon, rev(lat),
+          t(matrix(event_no_mean$event_no, 29, 69)), asp = T)
+
+library(data.table)
+setDT(event_no_yr)
+
+slopes_dt <- event_no_yr[, 
+                     .(slope = coef(lm(event_no ~ year, na.action = na.exclude))[2]), 
+                     by = cell]
+gridcell_lm <- unique(mhw_cube[, c("cell", "x", 'y')]) |>
+  setNames(c('cell','lon','lat')) |>
+  merge(slopes_dt) |>
+  merge(lon_lat, all = T)
+hist(gridcell_lm$slope)
+imagePlot(lon, rev(lat),
+          t(matrix(gridcell_lm$slope, 29, 69)), asp = T)
+
+
+results <- event_no_yr[, {
+  model <- lm(event_no ~ year, na.action = na.exclude)
+  summary_mod <- summary(model)$coefficients
+  .(slope = summary_mod["year", "Estimate"], 
+    p_val = summary_mod["year", "Pr(>|t|)"])
+}, by = cell]
+
+significant_slopes <- results[p_val < 0.05]
+
+gridcell_sig <- unique(mhw_cube[, c("cell", "x", 'y')]) |>
+  setNames(c('cell','lon','lat')) |>
+  merge(significant_slopes) |>
+  merge(lon_lat, all = T)
+hist(gridcell_sig$slope)
+imagePlot(lon, rev(lat),
+          t(matrix(gridcell_sig$slope, 29, 69)), asp = T)
+
+
