@@ -59,6 +59,8 @@ sst_r <- rast(sst_a[dim(sst_a)[1]:1,,], crs="EPSG:4326")
 ext(sst_r) <- c(min_lon, max_lon, min_lat, max_lat)
 time(sst_r) <- as.Date(dates)
 
+
+### US EEZ
 ann_gwide <- crop(sst_r, gulf_eez) |> mask(gulf_eez)
 # test <- sds(ann_gwide)
 cellsize_km <- cellSize(ann_gwide,unit='km') |> values() |> mean()
@@ -79,8 +81,38 @@ setwd("~/R_projects/ESR-indicator-scratch/data/intermediate_files")
 # https://robwschlegel.github.io/heatwaveR/reference/ts2clm.html
 # https://robwschlegel.github.io/heatwaveR/reference/detect_event.html
 mhw_cube <- detect3(file_in = 'oisst_gulf.nc',
+                    return_type = "df", 
+                    clim_period = c("1982-01-01", "2011-12-31"))
+                    # categories = T, climatology = T) # does not work
+# mhw_cube <- detect3(file_in = 'oisst_gulf.nc',
+#                     return_type = "df", clim_period = c("1990-01-01", "2020-12-31"))
+# save(mhw_cube, file = 'mhw_results.RData')
+gc()
+
+
+### whole Gulf
+# ann_gwide <- crop(sst_r, gulf_eez) |> mask(gulf_eez)
+# test <- sds(ann_gwide)
+cellsize_km <- cellSize(sst_r,unit='km') |> values() |> mean()
+
+setwd("~/R_projects/ESR-indicator-scratch/data/intermediate_files")
+writeCDF(sst_r, 'oisst_wgulf.nc',overwrite=TRUE)
+dat <- nc_open('oisst_wgulf.nc')
+data <- ncvar_get(dat, 'oisst_wgulf')
+lon <- ncvar_get(dat, 'longitude')
+lat <- ncvar_get(dat, 'latitude')
+lon_lat <- expand.grid(lon = lon,lat = lat)
+
+dat_m <- apply(data,c(1,2),mean,na.rm=T)
+ngrid <- length(which(!is.na(dat_m)))
+
+setwd("~/R_projects/ESR-indicator-scratch/data/intermediate_files")
+# https://robwschlegel.github.io/heatwave3/reference/detect3.html
+# https://robwschlegel.github.io/heatwaveR/reference/ts2clm.html
+# https://robwschlegel.github.io/heatwaveR/reference/detect_event.html
+mhw_cube_wg <- detect3(file_in = 'oisst_wgulf.nc',
                     return_type = "df", clim_period = c("1982-01-01", "2011-12-31"))
-save(mhw_cube, file = 'mhw_results.RData')
+save(mhw_cube_wg, file = 'mhw_wg_results.RData')
 gc()
 
 
