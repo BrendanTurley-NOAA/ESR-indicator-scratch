@@ -56,7 +56,7 @@ summarize_month <- function(month_start) {
   message("Processing ", format(month_start, "%Y-%m"))
 
   download <- download_month(month_start, month_end)
-  nc_path <- download$path
+  nc_path <- attr(download, "path")
   on.exit(unlink(nc_path), add = TRUE)
 
   afai <- rast(nc_path, subds = afai_variable)
