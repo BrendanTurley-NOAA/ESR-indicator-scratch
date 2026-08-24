@@ -16,10 +16,11 @@ lat_bounds <- c(24, 31)
 
 # 2. Monthly Processing Function
 process_monthly_afai <- function(yr, mo) {
-  start_dt <- sprintf("%04d-%02d-01", yr, mo)
+  # start_dt <- sprintf("%04d-%02d-01", yr, mo)
+  start_dt <- if (yr == 2016 && mo == 6) "2016-06-18" else sprintf("%04d-%02d-01", yr, mo)
   end_dt   <- as.character(ceiling_date(as.Date(start_dt), "month") - days(1))
   
-  message(sprintf("Processing: %04d-%02d...", yr, mo))
+  message(sprintf("Retrieving daily scenes: %s to %s...", start_dt, end_dt))
   
   tryCatch({
     # Query ERDDAP for monthly slice
@@ -46,33 +47,56 @@ process_monthly_afai <- function(yr, mo) {
     data.frame(
       year = yr,
       month = mo,
-      date = as.Date(start_dt),
+      date = as.Date(sprintf("%04d-%02d-01", yr, mo)),
       mean_afai = val_mean,
       max_afai = val_max
     )
   }, error = function(e) {
-    warning(sprintf("Failed to retrieve or process %04d-%02d: %s", yr, mo, e$message))
+    warning(sprintf("Failed to process %04d-%02d: %s", yr, mo, e$message))
     data.frame(
       year = yr,
       month = mo,
-      date = as.Date(start_dt),
+      date = as.Date(sprintf("%04d-%02d-01", yr, mo)),
       mean_afai = NA_real_,
       max_afai = NA_real_
     )
   })
 }
 
-# 3. Generate Time Series Array (2016 - 2025)
+# # 3. Generate Time Series Array (2016 - 2025)
+# time_grid <- expand.grid(yr = 2016:2025, mo = 1:12) |> 
+#   arrange(yr, mo)
+# 3. Monthly Time Grid starting June 2016
 time_grid <- expand.grid(yr = 2016:2025, mo = 1:12) |> 
+  filter(!(yr == 2016 & mo < 6)) |> 
   arrange(yr, mo)
 
 # 4. Execute Iterative Extraction
 monthly_sargassum_index <- pmap_dfr(time_grid, process_monthly_afai)
 
+setwd("~/R_projects/ESR-indicator-scratch/data")
+write.csv(monthly_sargassum_index, 'afai_test.csv')
+
 # View summary table head
 print(head(monthly_sargassum_index))
 
 # 5. Visualizing the Index: Spatial Mean vs Spatial Max
+# ggplot(monthly_sargassum_index, aes(x = date)) +
+#   geom_line(aes(y = max_afai, color = "Monthly Max Pixel"), linewidth = 0.9) +
+#   geom_line(aes(y = mean_afai, color = "Monthly Regional Mean"), linewidth = 0.9) +
+#   scale_color_manual(values = c("Monthly Max Pixel" = "#d95f02", "Monthly Regional Mean" = "#1b9e77")) +
+#   scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
+#   labs(
+#     title = "Gulf of Mexico Sargassum Monthly Index (2016–2025)",
+#     subtitle = "Aggregated 7-Day Cumulative USF AFAI (NOAA/AOML ERDDAP)",
+#     x = "Year",
+#     y = "AFAI Value",
+#     color = "Metric",
+#     caption = "Extent: Lat 24°N-31°N, Lon -99°W to -81°W"
+#   ) +
+#   theme_minimal(base_size = 12) +
+#   theme(legend.position = "bottom")
+
 ggplot(monthly_sargassum_index, aes(x = date)) +
   geom_line(aes(y = max_afai, color = "Monthly Max Pixel"), linewidth = 0.9) +
   geom_line(aes(y = mean_afai, color = "Monthly Regional Mean"), linewidth = 0.9) +
@@ -80,11 +104,11 @@ ggplot(monthly_sargassum_index, aes(x = date)) +
   scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
   labs(
     title = "Gulf of Mexico Sargassum Monthly Index (2016–2025)",
-    subtitle = "Aggregated 7-Day Cumulative USF AFAI (NOAA/AOML ERDDAP)",
+    subtitle = "Aggregated from Daily USF AFAI (NOAA/AOML ERDDAP)",
     x = "Year",
     y = "AFAI Value",
     color = "Metric",
-    caption = "Extent: Lat 24°N-31°N, Lon -99°W to -81°W"
+    caption = "Data Start: June 18, 2016 | Extent: Lat 24°N-31°N, Lon -99°W to -81°W"
   ) +
   theme_minimal(base_size = 12) +
   theme(legend.position = "bottom")
